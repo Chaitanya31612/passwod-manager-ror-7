@@ -28,3 +28,22 @@
 
 <h3 class="mb-3">Share</h3>
 <%= link_to "Add new user", new_password_share_path(@password) %>
+
+<hr>
+<h3 class="mb-3">Shared with</h3>
+<table class="w-full">
+  <thead>
+    <tr>
+      <th class="text-left">Email</th>
+      <th class="text-left">Action</th>
+    </tr>
+  </thead>
+  <tbody>
+    <% @password.users.excluding(current_user).each do |user| %>
+      <tr>
+        <td><%= user.email %></td>
+        <td><%= button_to "Revoke", password_share_path(@password, user), method: :delete, data: { turbo_confirm: "Are you sure?" }, class: "font-semibold text-red-500" %></td>
+      </tr>
+    <% end %>
+  </tbody>
+</table>
