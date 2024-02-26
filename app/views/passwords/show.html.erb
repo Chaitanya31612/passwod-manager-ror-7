@@ -10,7 +10,7 @@
 
     <% end %>
   </h1>
-  <%= link_to 'Edit Password', edit_password_path %>
+  <%= link_to 'Edit', edit_password_path(@password) if @password.editable_by?(current_user) %>
 </div>
 
 <h3 class="mb-3">Credentials</h3>
@@ -26,23 +26,30 @@
   <%= button_tag "Copy", class: "px-5 py-2.5 bg-gray-200 rounded", data: { controller: 'clipboard', action: "click->clipboard#copy", clipboard_content_value: @password.password } %>
 </div>
 
-<h3 class="mb-3">Share</h3>
-<%= link_to "Add new user", new_password_share_path(@password) %>
-
 <hr>
-<h3 class="mb-3">Shared with</h3>
+
+<div class="flex justify-between items-center mb-4">
+  <h3 class="my-0">Shared with</h3>
+  <%= link_to "Add user", new_password_share_path(@password) if @password.shareable_by?(current_user) %>
+</div>
 <table class="w-full">
   <thead>
     <tr>
       <th class="text-left">Email</th>
-      <th class="text-left">Action</th>
+      <th class="text-left">Role</th>
+      <% if @password.shareable_by?(current_user) %>
+        <th class="text-left">Action</th>
+      <% end %>
     </tr>
   </thead>
   <tbody>
-    <% @password.users.excluding(current_user).each do |user| %>
+    <% @password.user_passwords.includes(:user).each do |user_password| %>
       <tr>
-        <td><%= user.email %></td>
-        <td><%= button_to "Revoke", password_share_path(@password, user), method: :delete, data: { turbo_confirm: "Are you sure?" }, class: "font-semibold text-red-500" %></td>
+        <td><%= user_password.user.email %></td>
+        <td><%= user_password.role.titleize %></td>
+        <% if @password.shareable_by?(current_user) %>
+          <td><%= button_to "Revoke", password_share_path(@password, user_password.user), method: :delete, data: { turbo_confirm: "Are you sure?" }, class: "font-semibold text-red-500" %></td>
+        <% end %>
       </tr>
     <% end %>
   </tbody>

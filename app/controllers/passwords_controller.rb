@@ -1,6 +1,8 @@
 class PasswordsController < ApplicationController
   before_action :authenticate_user!
   before_action :set_password, only: [:edit, :update, :show, :destroy]
+  before_action :require_editor_privileges, only: [:edit, :update]
+  before_action :require_owner_privileges, only: [:destroy]
 
   # /passwords
   def index
@@ -14,13 +16,10 @@ class PasswordsController < ApplicationController
 
   # POST /passwords
   def create
-    # the bottom line is the same as:
-    # @password = Password.new(password_params)
-    # @password.user_passwords.new(user: current_user)
-    # and then if @password.save ...
+    @password = Password.new(password_params)
+    @password.user_passwords.new(user: current_user, role: :owner)
 
-    @password = current_user.passwords.create(password_params)
-    if @password.persisted?
+    if @password.save
       redirect_to @password
     else
       render :new, status: :unprocessable_entity
@@ -59,5 +58,15 @@ class PasswordsController < ApplicationController
 
   def set_password
     @password = current_user.passwords.find(params[:id])
+    rescue ActiveRecord::RecordNotFound
+      redirect_to root_path
+  end
+
+  def require_editor_privileges
+    redirect_to @password unless @password.editable_by?(current_user)
+  end
+
+  def require_owner_privileges
+    redirect_to @password unless @password.owned_by?(current_user)
   end
 end
